@@ -6,6 +6,9 @@ import shutil
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+
+
+#Získávání inputu uživatele
 parser = argparse.ArgumentParser(description="Program, který setřídí data podle roku a týdne")
 parser.add_argument("--input", help="Zadání cesty ze kterého chceme načítat soubory")
 parser.add_argument("--output", help="Zadání cesty k adresáři do kterého chceme ukládat soubory")
@@ -34,7 +37,9 @@ else:
 if user_input.version:
     sys.stderr.write("Current version: 1.0.0\n")
 
-counter = 0
+
+
+#Vytváření proměnných
 files = os.listdir(filepath_in)
 sys.stderr.write(f"Processing {len(files)} files..")
 
@@ -51,22 +56,30 @@ data = {}
 condition1 = None
 condition2 = None
 
+
+
+#Práce s daty
 if user_input.input:
     for file in files:
-        if file.endswith('.json'):
+        if file.endswith('.json'): #Kontrola jestli se jedná o .json file
             f = open(os.path.join(filepath_in, file))
             file_data = json.load(f)
-            if(file_data['date'].split("-")==file.split("_")[0].split("-")): #Kontrola jestli se date schoduje v názvu i uvnitř souboru
+
+            if(file_data['date'].split("-")==file.split("_")[0].split("-")): #Kontrola jestli se "date" shoduje v názvu i uvnitř souboru
                 num_words+=len(file_data['text'].split())
                 num_files+=1
                 counter+=1
                 date = datetime(*[int(x) for x in file_data['date'].split("-")])
                 sys.stdout.write(f"source: {filepath_in+'/'+file}, target: {filepath_out+'/W'+str(date.isocalendar().week)+'/'+file[5:]}\n")
-                if(active_year == 0 or active_year != date.isocalendar().year):
+                
+
+                if(active_year == 0 or active_year != date.isocalendar().year): #Kontrola jestli nepracujeme s daty z nového roku, nebo jestli žádný rok ještě není načtený
                     new_year = True
+
                     if new_year == True:
                         words_holder.append(num_words/num_files)
                         files_holder.append(num_files)
+
                     if active_week != 0:
                         data["words"] = words_holder
                         data["inputs"] = files_holder
@@ -78,9 +91,13 @@ if user_input.input:
                         num_words = 0
                     active_year = date.isocalendar().year
                     year_dir = os.path.join(filepath_out, str(date.isocalendar().year)[2:])
-                    if not(os.path.exists(year_dir)) and user_input.write:
+
+                    if not(os.path.exists(year_dir)) and user_input.write: #Vytvoření adresáře pro nový rok
                         os.makedirs(year_dir)
-                if(active_week == 0 or active_week != date.isocalendar().week or new_year == True):
+
+
+                if(active_week == 0 or active_week != date.isocalendar().week or new_year == True): #Kontrola jestli nepracujeme s daty z nového týdne
+
                     if active_week != 0 and new_year == False:
                         words_holder.append(num_words/num_files)
                         files_holder.append(num_files)
@@ -88,14 +105,17 @@ if user_input.input:
                         num_files = 0
                     active_week = date.isocalendar().week
                     week_dir = os.path.join(year_dir, "W"+str(active_week))
-                    if not(os.path.exists(week_dir)) and user_input.write:
+
+                    if not(os.path.exists(week_dir)) and user_input.write: #Vytvoření adresáře pro nový týden
                         os.makedirs(week_dir, 0o666)
                     new_year = False
                 f.close()
+
                 if user_input.write:
                     shutil.move(os.path.join(filepath_in, file), filepath_out+'/'+str(date.isocalendar().year)[2:]+'/W'+str(active_week)+'/'+file[5:])
+
     
-    if counter == len(files):   
+    if counter == len(files): #Kontrola jestli jsme prošli všechny soubory na vstupu  
         sys.stdout.write("Success: "+str(counter)+'/'+str(len(files))+" were transfered\n")
     else:  
         sys.stdout.write("Failure: "+str(counter)+'/'+str(len(files))+" were transfered\n")
@@ -107,8 +127,10 @@ if user_input.input:
         data["inputs"] = files_holder
         years[active_year] = data
 
-if user_input.write:   
-    if user_input.graph != None and int(user_input.graph) in list(years.keys()):
+
+if user_input.write: #Pokud chce uživatel změny provést, nebo-li nedělat pouze "dry-run" 
+
+    if user_input.graph != None and int(user_input.graph) in list(years.keys()): #Vytvoření grafu pro jeden rok
         plt.plot([int(x) for x in range(1,len(years[int(user_input.graph)]["inputs"])+1)], years[int(user_input.graph)]["inputs"], label = "Počet souborů")
         plt.plot([int(x) for x in range(1,len(years[int(user_input.graph)]["words"])+1)], years[int(user_input.graph)]["words"], label = "Průměrný počet slov")
         plt.xlabel('Počet')
@@ -120,7 +142,7 @@ if user_input.write:
         condition1 = False
         
     if not(user_input.compare == None):
-        if (int(user_input.compare[0]) in list(years.keys()) and int(user_input.compare[1]) in list(years.keys())): 
+        if (int(user_input.compare[0]) in list(years.keys()) and int(user_input.compare[1]) in list(years.keys())): #Vytvoření grafu pro porovnání dvou roků
             plt.plot([int(x) for x in range(1,len(years[int(user_input.compare[0])]["inputs"])+1)], years[int(user_input.compare[0])]["inputs"], label = "Počet souborů")
             plt.plot([int(x) for x in range(1,len(years[int(user_input.compare[0])]["words"])+1)], years[int(user_input.compare[0])]["words"], label = "Průměrný počet slov")
             plt.plot([int(x) for x in range(1,len(years[int(user_input.compare[1])]["inputs"])+1)], years[int(user_input.compare[1])]["inputs"], label = "Počet souborů")
@@ -134,6 +156,8 @@ if user_input.write:
         else:
             condition2 = False
 
+
+#Input verification
 if (not(user_input.write) and (not(user_input.graph == None and user_input.compare == None))):
     print("Pro možnost vytváření grafu musí být také zvolená možnost --write")
 
